@@ -48,53 +48,49 @@ fontLoader.load('Roboto_Regular.json', function (font) {
   });
 
   const vertexShader = `
-  precision mediump float;
-  precision mediump int;
+    varying vec2 vUv;
 
-  uniform mat4 modelViewMatrix;
-  uniform mat4 projectionMatrix;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `;
 
-  attribute vec3 position;
-  attribute vec4 color;
+  const fragmentShader = `
+    varying vec2 vUv;
+    uniform float time;
+    uniform vec2 resolution;
 
-  varying vec3 vPosition;
-  varying vec4 vColor;
+    void main() {
+      vec2 uv = vUv;
+      uv.y = 1.0 - uv.y; // Flip Y coordinate
 
-  void main() {
-    vPosition = position;
-    vColor = color;
+      // Calculate the distance from the center
+      vec2 center = vec2(0.5, 0.5); // Center coordinates
+      float distance = length(uv - center);
 
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
+      // Calculate the angle from the center
+      float angle = atan(uv.y - center.y, uv.x - center.x);
 
-const fragmentShader = `
-  precision mediump float;
-  precision mediump int;
+      // Calculate the color based on the distance and angle
+      vec3 color = vec3(
+        0.5 + 0.5 * cos(angle + time),         // Red component
+        0.5 + 0.5 * sin(distance + time),      // Green component
+        0.5 + 0.5 * cos(distance + angle + time) // Blue component
+      );
 
-  uniform float time;
+      gl_FragColor = vec4(color, 1.0);
+    }
+  `;
 
-  varying vec3 vPosition;
-  varying vec4 vColor;
-
-  void main() {
-    vec4 color = vec4(vColor);
-    color.r += sin(vPosition.x * 10.0 + time) * 0.5;
-
-    gl_FragColor = color;
-  }
-`;
-
-const shaderMaterial = new THREE.RawShaderMaterial({
-  uniforms: {
-    time: { value: 1.0 },
-  },
-  vertexShader: vertexShader,
-  fragmentShader: fragmentShader,
-  side: THREE.DoubleSide,
-  transparent: true,
-});
-
+  const shaderMaterial = new ShaderMaterial({
+    vertexShader: vertexShader,
+    fragmentShader: fragmentShader,
+    uniforms: {
+      time: { value: 0.0 },
+      resolution: { value: new THREE.Vector2(screenWidth, screenHeight) }
+    }
+  });
 
 
   const textMesh = new THREE.Mesh(textGeometry, shaderMaterial);
@@ -120,50 +116,47 @@ const shaderMaterial = new THREE.RawShaderMaterial({
   // const skybox = textureLoader.load(skyTextures);
   // scene.background = skybox;
 
-// Create a shader for the sky
+
 // Create a shader for the sky
 const vertexShaderSky = `
-  varying vec3 vWorldPosition;
-  varying vec2 vUv; // Add varying for UV coordinates
+varying vec2 vUv;
 
-  void main() {
-    vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-    vWorldPosition = worldPosition.xyz;
-    vUv = uv; // Pass UV coordinates to the fragment shader
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
+void main()	{
+  vUv = uv;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
 `;
 
 const fragmentShaderSky = `
-  uniform vec3 color1;
-  uniform vec3 color2;
-  uniform vec3 color3;
-  uniform float offset;
-  uniform float exponent;
-  uniform float time; // New uniform for animation
+varying vec2 vUv;
+  uniform float time;
 
-  varying vec3 vWorldPosition;
-  varying vec2 vUv; // UV coordinates
+  void main()	{
+    vec2 p = -1.0 + 2.0 * vUv;
+    float a = time * 40.0;
+    float d, e, f, g = 1.0 / 40.0 ,h ,i ,r ,q;
 
-  // Image texture for the front side of the skybox
-  uniform sampler2D frontTexture;
-
-  void main() {
-    float h = normalize(vWorldPosition + offset).y;
-    
-    // Calculate the animated colors based on time
-    vec3 animatedColor1 = mix(color1, color2, (sin(time * 0.2) + 1.0) * 0.5); // Transition between color1 and color2
-    vec3 animatedColor2 = mix(color2, color3, (sin(time * 0.1) + 1.0) * 0.5); // Transition between color2 and color3
-    
-    // Mix the animated colors based on height
-    vec3 color = mix(animatedColor1, animatedColor2, max(pow(max(h, 0.0), exponent), 0.0));
-
-    // Apply the texture to the front side
-    if (vUv.y > 0.5) {
-      gl_FragColor = texture2D(frontTexture, vec2(vUv.x, 1.0 - vUv.y));
-    } else {
-      gl_FragColor = vec4(color, 1.0);
-    }
+    e = 400.0 * ( p.x * 0.5 + 0.5 );
+    f = 400.0 * ( p.y * 0.5 + 0.5 );
+    i = 200.0 + sin( e * g + a / 150.0 ) * 20.0;
+    d = 200.0 + cos( f * g / 2.0 ) * 18.0 + cos( e * g ) * 7.0;
+    r = sqrt( pow( abs( i - e ), 2.0 ) + pow( abs( d - f ), 2.0 ) );
+    q = f / r;
+    e = ( r * cos( q ) ) - a / 2.0;
+    f = ( r * sin( q ) ) - a / 2.0;
+    d = sin( e * g ) * 176.0 + sin( e * g ) * 164.0 + r;
+    h = ( ( f + d ) + a / 2.0 ) * g;
+    i = cos( h + r * p.x / 1.3 ) * ( e + e + a ) + cos( q * g * 6.0 ) * ( r + h / 3.0 );
+    h = sin( f * g ) * 144.0 - sin( e * g ) * 212.0 * p.x;
+    h = ( h + ( f - e ) * q + sin( r - ( a + h ) / 7.0 ) * 10.0 + i / 4.0 ) * g;
+    i += cos( h * 2.3 * sin( a / 350.0 - q ) ) * 184.0 * sin( q - ( r * 4.3 + a / 12.0 ) * g ) + tan( r * g + h ) * 184.0 * cos( r * g + h );
+    i = mod( i / 5.6, 256.0 ) / 64.0;
+    if ( i < 0.0 ) i += 4.0;
+    if ( i >= 2.0 ) i = 4.0 - i;
+    d = r / 350.0;
+    d += sin( d * d * 8.0 ) * 0.52;
+    f = ( sin( a * g ) + 1.0 ) / 2.0;
+    gl_FragColor = vec4( vec3( f * i / 1.6, i / 2.0 + d / 13.0, i ) * d * p.x + vec3( i / 1.3 + d / 8.0, i / 2.0 + d / 18.0, i ) * d * ( 1.0 - p.x ), 1.0 );
   }
 `;
 
@@ -179,7 +172,7 @@ const skyMaterial = new THREE.ShaderMaterial({
     offset: { value: 33 },
     exponent: { value: 0.6 },
     time: { value: 0 }, // Initialize time uniform
-    frontTexture: { value: new THREE.TextureLoader().load(sky) } // Image for the front side
+    // frontTexture: { value: new THREE.TextureLoader().load(sky) } // Image for the front side
   },
   side: THREE.BackSide,
 });
@@ -223,8 +216,8 @@ scene.add(skybox);
 
     // Rotate the skybox
    
-    skybox.rotation.y += (23.44 * Math.PI / 90) * 0.4; // Adjust the rotation speed by multiplying with a smaller value
-skybox.rotation.z += (23.44 * Math.PI / 90) * 0.4;
+    skybox.rotation.y += (23.44 * Math.PI / 90) * 0.01; // Adjust the rotation speed by multiplying with a smaller value
+skybox.rotation.z += (23.44 * Math.PI / 90) * 0.01;
 
   
     // Render the scene with the camera
