@@ -95,7 +95,9 @@ fontLoader.load('Roboto_Regular.json', function (font) {
 
   const textMesh = new THREE.Mesh(textGeometry, shaderMaterial);
   textMesh.position.set(-2, 0, 0);
-  scene.add(textMesh);
+  const textContainer = new THREE.Object3D();
+textContainer.add(textMesh);
+scene.add(textContainer);
 
   // Add directional light to the scene
   const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
@@ -200,7 +202,9 @@ scene.add(skybox);
     // Update the uniform value for time for sky 
     skyMaterial.uniforms.time.value += 0.05;
 
-    
+         // Rotate the parent object (textContainer) on the y-axis
+  const rotationSpeed = 0.003; // Adjust the speed of rotation
+  textContainer.rotation.y += rotationSpeed;
 
     // Adjust the z-position of the text
     const movementSpeed = 0.005; // Adjust the speed of movement
@@ -217,8 +221,7 @@ scene.add(skybox);
     // Rotate the skybox
    
     skybox.rotation.y += (23.44 * Math.PI / 90) * 0.01; // Adjust the rotation speed by multiplying with a smaller value
-skybox.rotation.z += (23.44 * Math.PI / 90) * 0.01;
-
+    skybox.rotation.z += (23.44 * Math.PI / 90) * 0.01;
   
     // Render the scene with the camera
     renderer.render(scene, camera);
