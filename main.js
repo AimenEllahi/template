@@ -220,8 +220,8 @@ scene.add(skybox);
 
     // Rotate the skybox
    
-    skybox.rotation.y += (23.44 * Math.PI / 90) * 0.01; // Adjust the rotation speed by multiplying with a smaller value
-    skybox.rotation.z += (23.44 * Math.PI / 90) * 0.01;
+    skybox.rotation.y += (23.44 * Math.PI / 90) * 0.005; // Adjust the rotation speed by multiplying with a smaller value
+    skybox.rotation.z += (23.44 * Math.PI / 90) * 0.005;
   
     // Render the scene with the camera
     renderer.render(scene, camera);
