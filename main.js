@@ -15,7 +15,7 @@ const scene = new THREE.Scene();
 // Create a camera
 let screenWidth = window.innerWidth,
   screenHeight = window.innerHeight,
-  viewAngle = 85,
+  viewAngle = 95,
   nearDistance = 0.1,
   farDistance = 5000;
 let camera = new THREE.PerspectiveCamera(
@@ -35,92 +35,72 @@ document.body.appendChild(renderer.domElement);
 const fontLoader = new FontLoader();
 
 // Load the font file and create the text geometry
-fontLoader.load('Roboto_Regular.json', function (font) {
-  const textGeometry = new TextGeometry('MAD', {
+fontLoader.load('MisterBrown_.json', function (font) {
+  const textGeometry = new TextGeometry('Polydea', {
     font: font,
-    size: 1.55,
+    size: 1.7,
     height: 0.1,
     curveSegments: 12,
     bevelEnabled: true,
-    bevelThickness: 0.05,
+    bevelThickness: 0.09,
     bevelSize: 0.05,
     bevelSegments: 5
   });
 
-  const vertexShader = `
-    varying vec2 vUv;
-
-    void main() {
-      vUv = uv;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-    }
-  `;
-
-  const fragmentShader = `
-    varying vec2 vUv;
-    uniform float time;
-    uniform vec2 resolution;
-
-    void main() {
-      vec2 uv = vUv;
-      uv.y = 1.0 - uv.y; // Flip Y coordinate
-
-      // Calculate the distance from the center
-      vec2 center = vec2(0.5, 0.5); // Center coordinates
-      float distance = length(uv - center);
-
-      // Calculate the angle from the center
-      float angle = atan(uv.y - center.y, uv.x - center.x);
-
-      // Calculate the color based on the distance and angle
-      vec3 color = vec3(
-        0.5 + 0.5 * cos(angle + time),         // Red component
-        0.5 + 0.5 * sin(distance + time),      // Green component
-        0.5 + 0.5 * cos(distance + angle + time) // Blue component
-      );
-
-      gl_FragColor = vec4(color, 1.0);
-    }
-  `;
-
-  const shaderMaterial = new ShaderMaterial({
-    vertexShader: vertexShader,
-    fragmentShader: fragmentShader,
-    uniforms: {
-      time: { value: 0.0 },
-      resolution: { value: new THREE.Vector2(screenWidth, screenHeight) }
-    }
+  const shaderMaterial = new THREE.MeshStandardMaterial({
+    color: 0xFFFFFF, // Set the color of the material
+    roughness: 0.3, // Set the roughness property (0 for smooth, 1 for rough)
   });
-
-
   const textMesh = new THREE.Mesh(textGeometry, shaderMaterial);
-  textMesh.position.set(-2, 0, 0);
+  textMesh.position.set(.5, 0, 0);
   const textContainer = new THREE.Object3D();
-textContainer.add(textMesh);
-scene.add(textContainer);
+  textContainer.add(textMesh);
+  scene.add(textContainer);
 
   // Add directional light to the scene
   const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+  directionalLight.scale.set(2, 2, 2);
   directionalLight.position.set(1, 1, 1);
   scene.add(directionalLight);
 
-  // Load skybox textures and create the skybox
-  // const textureLoader = new CubeTextureLoader();
-  // const skyTextures = [
-  //   sky,
-  //   sky,
-  //   sky,
-  //   sky,
-  //   sky,
-  //   sky
-  // ];
-
-  // const skybox = textureLoader.load(skyTextures);
-  // scene.background = skybox;
-
-
 // Create a shader for the sky
-const vertexShaderSky = `
+const vertexShader1 = `
+varying vec2 vUv;
+
+void main() {
+  vUv = uv;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`;
+
+const fragmentShader1 = `
+varying vec2 vUv;
+uniform float time;
+uniform vec2 resolution;
+
+void main() {
+  vec2 uv = vUv;
+  uv.y = 1.0 - uv.y; // Flip Y coordinate
+
+  // Calculate the distance from the center
+  vec2 center = vec2(0.5, 0.5); // Center coordinates
+  float distance = length(uv - center);
+
+  // Calculate the angle from the center
+  float angle = atan(uv.y - center.y, uv.x - center.x);
+
+  // Calculate the color based on the distance and angle
+  vec3 color = vec3(
+    0.5 + 0.2 * cos(angle + time),         // Red component
+    0.5 + 0.25 * sin(distance + time),      // Green component
+    0.5 + 0.2 * cos(distance + angle + time) // Blue component
+  );
+
+  gl_FragColor = vec4(color, 1.0);
+}
+`;
+
+const vertexShader2 = `
 varying vec2 vUv;
 
 void main()	{
@@ -129,53 +109,94 @@ void main()	{
 }
 `;
 
-const fragmentShaderSky = `
-varying vec2 vUv;
+const fragmentShader2 = `
   uniform float time;
+  varying vec2 vUv;
 
   void main()	{
-    vec2 p = -1.0 + 2.0 * vUv;
-    float a = time * 40.0;
-    float d, e, f, g = 1.0 / 40.0 ,h ,i ,r ,q;
+    vec2 position = vUv;
 
-    e = 400.0 * ( p.x * 0.5 + 0.5 );
-    f = 400.0 * ( p.y * 0.5 + 0.5 );
-    i = 200.0 + sin( e * g + a / 150.0 ) * 20.0;
-    d = 200.0 + cos( f * g / 2.0 ) * 18.0 + cos( e * g ) * 7.0;
-    r = sqrt( pow( abs( i - e ), 2.0 ) + pow( abs( d - f ), 2.0 ) );
-    q = f / r;
-    e = ( r * cos( q ) ) - a / 2.0;
-    f = ( r * sin( q ) ) - a / 2.0;
-    d = sin( e * g ) * 176.0 + sin( e * g ) * 164.0 + r;
-    h = ( ( f + d ) + a / 2.0 ) * g;
-    i = cos( h + r * p.x / 1.3 ) * ( e + e + a ) + cos( q * g * 6.0 ) * ( r + h / 3.0 );
-    h = sin( f * g ) * 144.0 - sin( e * g ) * 212.0 * p.x;
-    h = ( h + ( f - e ) * q + sin( r - ( a + h ) / 7.0 ) * 10.0 + i / 4.0 ) * g;
-    i += cos( h * 2.3 * sin( a / 350.0 - q ) ) * 184.0 * sin( q - ( r * 4.3 + a / 12.0 ) * g ) + tan( r * g + h ) * 184.0 * cos( r * g + h );
-    i = mod( i / 5.6, 256.0 ) / 64.0;
-    if ( i < 0.0 ) i += 4.0;
-    if ( i >= 2.0 ) i = 4.0 - i;
-    d = r / 350.0;
-    d += sin( d * d * 8.0 ) * 0.52;
-    f = ( sin( a * g ) + 1.0 ) / 2.0;
-    gl_FragColor = vec4( vec3( f * i / 1.6, i / 2.0 + d / 13.0, i ) * d * p.x + vec3( i / 1.3 + d / 8.0, i / 2.0 + d / 18.0, i ) * d * ( 1.0 - p.x ), 1.0 );
+    float color = 0.0;
+    color += sin(position.x * cos(time / 15.0) * 80.0) + cos(position.y * cos(time / 15.0) * 10.0);
+    color += sin(position.y * sin(time / 10.0) * 40.0) + cos(position.x * sin(time / 25.0) * 40.0);
+    color += sin(position.x * sin(time / 5.0) * 10.0) + sin(position.y * sin(time / 35.0) * 80.0);
+    color *= sin(time / 10.0) * 0.5;
+
+    gl_FragColor = vec4(vec3(color, color * 0.5, sin(color + time / 3.0) * 0.75), 1.0);
+  }
+`;
+
+const vertexShader3 = `
+varying vec2 vUv;
+
+void main() {
+  vUv = uv;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`;
+
+const fragmentShader3 = `
+  uniform float time;
+  varying vec2 vUv;
+
+  void main() {
+    vec2 uv = vUv;
+    uv.y = 1.0 - uv.y; // Flip Y coordinate
+
+    // Calculate the distance from the center
+    vec2 center = vec2(0.5, 0.5); // Center coordinates
+    float distance = length(uv - center);
+
+    // Calculate the angle from the center
+    float angle = atan(uv.y - center.y, uv.x - center.x);
+
+    // Calculate the color based on the distance and angle
+    vec3 color = vec3(
+      mix(0.917, 0.415, sin(distance * 5.0 + time)),  // Red component
+      mix(0.878, 0.604, cos(angle * 10.0 + time)),     // Green component
+      mix(0.878, 0.467, sin((distance + angle) * 15.0 + time))  // Blue component
+    );
+
+    // Exclude white color
+    if (color == vec3(1.0)) {
+      color = vec3(0.917, 0.415, 0.878); // Use a different color as fallback
+    }
+
+    gl_FragColor = vec4(color, 1.0);
   }
 `;
 
 
+
+//array of shaders
+const shaders = [
+  {
+    vertexShader: vertexShader1,
+    fragmentShader: fragmentShader1,
+  },
+  {
+    vertexShader: vertexShader2,
+    fragmentShader: fragmentShader2,
+  },
+  {
+    vertexShader: vertexShader3,
+    fragmentShader: fragmentShader3,
+  },
+  // Add more shaders here as needed
+];
+
+// Randomly select a shader from the array
+const randomShader = shaders[Math.floor(Math.random() * shaders.length)];
+
+
 // Create the shader material for the sky
 const skyMaterial = new THREE.ShaderMaterial({
-  vertexShader: vertexShaderSky,
-  fragmentShader: fragmentShaderSky,
   uniforms: {
-    color1: { value: new THREE.Color(0xff00f4) }, // Set initial color1
-    color2: { value: new THREE.Color(0x00ff00) }, // Set initial color2
-    color3: { value: new THREE.Color(0x0f00ff) }, // Set initial color3
-    offset: { value: 33 },
-    exponent: { value: 0.6 },
-    time: { value: 0 }, // Initialize time uniform
-    // frontTexture: { value: new THREE.TextureLoader().load(sky) } // Image for the front side
+    time: { value: 0 },
+    resolution: { value: new THREE.Vector2() },
   },
+  vertexShader: randomShader.vertexShader,
+  fragmentShader: randomShader.fragmentShader,
   side: THREE.BackSide,
 });
 
@@ -193,35 +214,46 @@ scene.add(skybox);
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.update();
 
+  // Update the resolution uniform when the window is resized
+window.addEventListener('load', () => {
+  screenWidth = window.innerWidth;
+  screenHeight = window.innerHeight;
+  camera.aspect = screenWidth / screenHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(screenWidth, screenHeight);
+  skyMaterial.uniforms.resolution.value.set(screenWidth, screenHeight);
+});
+
+  let time = 0;
+  let movementRange = 0.1;
   // Animation loop
   function animate() {
     requestAnimationFrame(animate);
 
     // Update the uniform value for time
-    shaderMaterial.uniforms.time.value += 0.05;
+    // shaderMaterial.uniforms.time.value += 0.05;
     // Update the uniform value for time for sky 
     skyMaterial.uniforms.time.value += 0.05;
 
          // Rotate the parent object (textContainer) on the y-axis
-  const rotationSpeed = 0.003; // Adjust the speed of rotation
-  textContainer.rotation.y += rotationSpeed;
+  const rotationSpeed = 0.004; // Adjust the speed of rotation
+ // textContainer.rotation.y += rotationSpeed;
+ textMesh.geometry.center();
+  textMesh.rotation.y += rotationSpeed;
 
     // Adjust the z-position of the text
-    const movementSpeed = 0.005; // Adjust the speed of movement
-    const movementRange = 0.2; // Adjust the range of movement
-    const zPosition = Math.sin(shaderMaterial.uniforms.time.value) * movementRange;
-    textMesh.position.z = 1 + zPosition;
+    time += 0.1;
 
-    // Adjust the thickness of the text
-    const thickness = 0.1 + Math.sin(shaderMaterial.uniforms.time.value * 0.5) * 0.1;
-    textGeometry.parameters.height = thickness;
-    textGeometry.parameters.bevelThickness = thickness * 0.1;
-    textGeometry.parameters.bevelSize = thickness * 0.1;
+  // Calculate the z position based on the updated time value
+  const zPosition = Math.sin(time) * movementRange;
+
+  // Set the new z position for the text mesh
+  textMesh.position.z = 1 + zPosition;
 
     // Rotate the skybox
    
-    skybox.rotation.y += (23.44 * Math.PI / 90) * 0.005; // Adjust the rotation speed by multiplying with a smaller value
-    skybox.rotation.z += (23.44 * Math.PI / 90) * 0.005;
+    skybox.rotation.y += (23.44 * Math.PI / 90) * 0.001; // Adjust the rotation speed by multiplying with a smaller value
+    skybox.rotation.z += (23.44 * Math.PI / 90) * 0.001;
   
     // Render the scene with the camera
     renderer.render(scene, camera);
