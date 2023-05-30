@@ -38,7 +38,7 @@ const fontLoader = new FontLoader();
 fontLoader.load('MisterBrown_.json', function (font) {
   const textGeometry = new TextGeometry('Polydea', {
     font: font,
-    size: 1.7,
+    size: 1.9,
     height: 0.1,
     curveSegments: 12,
     bevelEnabled: true,
@@ -50,9 +50,10 @@ fontLoader.load('MisterBrown_.json', function (font) {
   const shaderMaterial = new THREE.MeshStandardMaterial({
     color: 0xFFFFFF, // Set the color of the material
     roughness: 0.3, // Set the roughness property (0 for smooth, 1 for rough)
+    metalness: 1, // Set the metalness property (0 for plastic, 1 for metal)
   });
   const textMesh = new THREE.Mesh(textGeometry, shaderMaterial);
-  textMesh.position.set(.5, 0, 0);
+  textMesh.position.set(0, 0, 0);
   const textContainer = new THREE.Object3D();
   textContainer.add(textMesh);
   scene.add(textContainer);
@@ -60,8 +61,16 @@ fontLoader.load('MisterBrown_.json', function (font) {
   // Add directional light to the scene
   const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
   directionalLight.scale.set(2, 2, 2);
-  directionalLight.position.set(1, 1, 1);
+  directionalLight.position.set(10, 2, 1);
+  //to increase intensity of light
+  directionalLight.intensity = 2;
   scene.add(directionalLight);
+
+  const directionalLight2 = new THREE.DirectionalLight(0xffffff, 1);
+  directionalLight2.scale.set(2, 2, 2);
+  directionalLight2.position.set(-10, 2, 1);
+  directionalLight2.intensity = 2;
+  scene.add(directionalLight2);
 
 // Create a shader for the sky
 const vertexShader1 = `
@@ -74,9 +83,12 @@ void main() {
 `;
 
 const fragmentShader1 = `
-varying vec2 vUv;
 uniform float time;
-uniform vec2 resolution;
+varying vec2 vUv;
+
+float rand(float n) {
+  return fract(sin(n) * 43758.5453);
+}
 
 void main() {
   vec2 uv = vUv;
@@ -89,15 +101,26 @@ void main() {
   // Calculate the angle from the center
   float angle = atan(uv.y - center.y, uv.x - center.x);
 
-  // Calculate the color based on the distance and angle
+  // Generate the cube pattern
+  float cubes = smoothstep(0.51, 0.55, fract(sin(uv.x * 10.0) * 43758.5453 + sin(uv.y * 10.0) * 23421.631));
+
+  // Generate the texture pattern
+  float texture = rand(floor(uv.x * 10.0) + floor(uv.y * 10.0) * 100.0);
+
+  // Adjust the visibility of the texture
+  texture = pow(texture, 4.0);
+
+  // Calculate the color based on the distance, angle, cube pattern, and texture
   vec3 color = vec3(
-    0.5 + 0.2 * cos(angle + time),         // Red component
-    0.5 + 0.25 * sin(distance + time),      // Green component
-    0.5 + 0.2 * cos(distance + angle + time) // Blue component
+    0.5 + 0.2 * cos(angle + time) * cubes * texture,         // Red component
+    0.5 + 0.25 * sin(distance + time) * cubes * texture,      // Green component
+    0.5 + 0.2 * cos(distance + angle + time) * cubes * texture // Blue component
   );
 
   gl_FragColor = vec4(color, 1.0);
 }
+
+
 `;
 
 const vertexShader2 = `
@@ -236,7 +259,7 @@ window.addEventListener('load', () => {
     skyMaterial.uniforms.time.value += 0.05;
 
          // Rotate the parent object (textContainer) on the y-axis
-  const rotationSpeed = 0.004; // Adjust the speed of rotation
+  const rotationSpeed = 0.006; // Adjust the speed of rotation
  // textContainer.rotation.y += rotationSpeed;
  textMesh.geometry.center();
   textMesh.rotation.y += rotationSpeed;
