@@ -38,7 +38,7 @@ const fontLoader = new FontLoader();
 fontLoader.load('MisterBrown_.json', function (font) {
   const textGeometry = new TextGeometry('Polydea', {
     font: font,
-    size: 1.9,
+    size: window.innerWidth < 756 ? .9 : 1.9,
     height: 0.1,
     curveSegments: 12,
     bevelEnabled: true,
@@ -245,6 +245,17 @@ window.addEventListener('load', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(screenWidth, screenHeight);
   skyMaterial.uniforms.resolution.value.set(screenWidth, screenHeight);
+});
+
+//to make the text mobile responsive
+window.addEventListener('resize', () => {
+  screenWidth = window.innerWidth;
+  screenHeight = window.innerHeight;
+  camera.aspect = screenWidth / screenHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(screenWidth, screenHeight);
+ //to decrease the size of text
+  textMesh.scale.set(0.5, 0.5, 0.5);
 });
 
   let time = 0;
