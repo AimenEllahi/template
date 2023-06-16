@@ -8,6 +8,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+sculpture_black2.gltf
 dist
 dist-ssr
 *.local
